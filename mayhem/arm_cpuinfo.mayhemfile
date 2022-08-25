@@ -1,0 +1,4 @@
+project: PROJECT
+target: arm_cpuinfo
+cmds:
+- cmd: /out/arm_cpuinfo

@@ -21,7 +21,10 @@ RUN rm -rf boringssl/mayhem
 # Use ASN.1 pdu protobuf and converter from the google/fuzzing repo.
 RUN git clone --depth 1 https://github.com/google/fuzzing.git
 RUN git clone --depth 1 https://github.com/google/libprotobuf-mutator.git
-RUN (mkdir LPM && cd LPM && cmake ../libprotobuf-mutator -GNinja -DLIB_PROTO_MUTATOR_DOWNLOAD_PROTOBUF=ON -DLIB_PROTO_MUTATOR_TESTING=OFF -DCMAKE_BUILD_TYPE=Release && ninja)
+# Build LPM with -gdwarf-4 to prevent clang 22 from emitting DWARF5 debug info.
+# GNU ld cannot parse DWARF5 DW_FORM_implicit_const (0x25), which causes it to
+# fail resolving symbols from the downloaded abseil/protobuf static archives.
+RUN CFLAGS="$CFLAGS -gdwarf-4" CXXFLAGS="$CXXFLAGS -gdwarf-4" bash -c "mkdir LPM && cd LPM && cmake ../libprotobuf-mutator -GNinja -DLIB_PROTO_MUTATOR_DOWNLOAD_PROTOBUF=ON -DLIB_PROTO_MUTATOR_TESTING=OFF -DCMAKE_BUILD_TYPE=Release && ninja"
 COPY mayhem/*.cc mayhem/build.sh $SRC/
 # This is to fix Fuzz Introspector build by using LLVM old pass manager
 # re https://github.com/ossf/fuzz-introspector/issues/305

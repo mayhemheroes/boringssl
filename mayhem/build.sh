@@ -19,7 +19,7 @@ mkdir -p $WORK/boringssl
 cd $WORK/boringssl
 
 CFLAGS="$CFLAGS -DBORINGSSL_UNSAFE_FUZZER_MODE"
-CXXFLAGS="$CXXFLAGS -DBORINGSSL_UNSAFE_FUZZER_MODE"
+CXXFLAGS="$CXXFLAGS -DBORINGSSL_UNSAFE_FUZZER_MODE -Wno-error=character-conversion"
 
 CMAKE_DEFINES="-DBORINGSSL_ALLOW_CXX_RUNTIME=1"
 if [[ $CFLAGS = *sanitize=memory* ]]
@@ -65,9 +65,14 @@ if [[ $CFLAGS != *sanitize=memory* ]]; then
         -I $SRC/boringssl/include \
         $F genfiles/asn1_pdu.pb.cc $SRC/asn1_pdu_to_der.cc $SRC/common.cc \
         ./ssl/libssl.a ./crypto/libcrypto.a \
+        -Wl,--start-group \
         $SRC/LPM/src/libfuzzer/libprotobuf-mutator-libfuzzer.a \
         $SRC/LPM/src/libprotobuf-mutator.a \
         $SRC/LPM/external.protobuf/lib/libprotobuf.a \
+        $(find $SRC/LPM/external.protobuf/lib -name "libabsl_*.a" | sort | tr "\n" " ") \
+        $SRC/LPM/external.protobuf/lib/libutf8_range.a \
+        $SRC/LPM/external.protobuf/lib/libutf8_validity.a \
+        -Wl,--end-group \
         -o $OUT/"${fuzzerName}_lpm"
   done
 fi
